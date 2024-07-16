@@ -1,0 +1,31 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  object      String
+  actorId     String
+  actorName   String
+  group       String
+  action      Action   @relation(fields: [actionId], references: [id])
+  actionId    String
+  targetId    String
+  targetName  String
+  location    String
+  occurredAt  DateTime @default(now())
+  metadata    Json
+}
+
+model Action {
+  id      String   @id @default(cuid())
+  object  String
+  name    String
+  events  Event[]
+}
