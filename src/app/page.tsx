@@ -1,112 +1,210 @@
+"use client";
+import { useState } from "react";
+import { fetcher } from "../lib/fetcher";
+import useSWRInfinite from "swr/infinite";
+import { useDebounce } from "@/lib/hooks/useDebounce";
+import BodyLoadingSkeleton from "@/components/eventsTable/bodyLoadingSkeleton";
+import ArrowRight from "../../public/arrow-right.png";
 import Image from "next/image";
 
+interface Event {
+  id: string;
+  actorName: string;
+  actorId: string;
+  targetName: string;
+  targetId: string;
+  occurredAt: string;
+  action: {
+    id: string;
+    object: string;
+    name: string;
+  };
+  metadata: Record<string, string | undefined>;
+}
+
+interface EventResponse {
+  events: Event[];
+  totalCount: number;
+  page: number;
+  limit: number;
+}
+
+const PAGE_SIZE = 5;
+
+const getKey = (
+  pageIndex: number,
+  previousPageData: EventResponse | null,
+  search: string
+) => {
+  if (previousPageData && !previousPageData.events.length) return null; // reached the end
+  return `/api/events?page=${
+    pageIndex + 1
+  }&limit=${PAGE_SIZE}&search=${search}`;
+};
+
 export default function Home() {
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
+
+  const { data, error, size, setSize, isValidating } =
+    useSWRInfinite<EventResponse>(
+      (pageIndex, previousPageData) =>
+        getKey(pageIndex, previousPageData, debouncedSearch),
+      fetcher
+    );
+
+  if (error) return <div>Failed to load</div>;
+
+  const events = data ? data.flatMap((page) => page.events) : [];
+  const isReachingEnd =
+    data &&
+    data[data.length - 1] &&
+    data[data.length - 1].events.length < PAGE_SIZE;
+
+  const loadMore = () => {
+    setSize(size + 1);
+  };
+
+  const toggleExpandRow = (eventId: string) => {
+    setExpandedRow(expandedRow === eventId ? null : eventId);
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    <main className="min-h-screen p-24">
+      <div className="bg-[#f5f5f5] rounded-lg shadow">
+        <div className="p-4 pb-1">
+          <input
+            type="text"
+            placeholder="Search name, email or action..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full p-3 border border-[#E0E0DF] rounded-lg bg-transparent focus:outline-none"
+          />
         </div>
-      </div>
+        <table className="min-w-full">
+          <thead>
+            <tr>
+              <th className="text-start px-6 py-2 uppercase text-sm font-semibold text-[#616161]">
+                Actor
+              </th>
+              <th className="text-start px-6 py-2 uppercase text-sm font-semibold text-[#616161]">
+                Action
+              </th>
+              <th className="text-start px-6 py-2 uppercase text-sm font-semibold text-[#616161]">
+                Date
+              </th>
+              <th className="text-start px-6 py-2 uppercase text-sm font-semibold text-[#616161]"></th>
+            </tr>
+          </thead>
+          <tbody className="bg-white border-x border-[#f5f5f5]">
+            {events.length > 0 ? (
+              events.map((event) => (
+                <>
+                  <tr
+                    key={event.id}
+                    className="hover:bg-[#FBFBFB] cursor-pointer"
+                    onClick={() => toggleExpandRow(event.id)}
+                  >
+                    <td className="py-2 px-6 flex items-center first:py-6">
+                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xl font-semibold text-white mr-2">
+                        {event.actorName.charAt(0).toUpperCase()}
+                      </div>
+                      <span>{event.targetName}</span>
+                    </td>
+                    <td className="py-2 px-6">{event.action.name}</td>
+                    <td className="py-2 px-6">
+                      {new Date(event.occurredAt).toLocaleString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "numeric",
+                        hour12: true,
+                      })}
+                    </td>
+                    <td className="py-2 px-6">
+                      <Image src={ArrowRight} alt="arrow right icon" />
+                    </td>
+                  </tr>
+                  {expandedRow === event.id && (
+                    <tr key={`${event.id}-details`}>
+                      <td colSpan={4} className="border-b bg-gray-50">
+                        <div className="ms-[-3%] w-[106%] p-4 bg-gray-100 rounded-lg shadow-md">
+                          <div className="grid grid-cols-3 gap-4">
+                            <div>
+                              <h3 className="font-semibold">Actor</h3>
+                              <p>Name: {event.actorName}</p>
+                              <p>Email: {event.targetName}</p>
+                              <p>ID: {event.actorId}</p>
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">Action</h3>
+                              <p>Name: {event.action.name}</p>
+                              <p>Object: {event.action.object}</p>
+                              <p>ID: {event.action.id}</p>
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">Date</h3>
+                              <p>
+                                Readable:{" "}
+                                {new Date(event.occurredAt).toLocaleString()}
+                              </p>
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">Metadata</h3>
+                              {event.metadata &&
+                                Object.entries(event.metadata).map(
+                                  ([key, value]) => (
+                                    <p key={key}>
+                                      {key}: {value}
+                                    </p>
+                                  )
+                                )}
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">Target</h3>
+                              <p>Name: {event.targetName}</p>
+                              <p>ID: {event.targetId}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </>
+              ))
+            ) : !data ? (
+              <>
+                {Array.from({ length: PAGE_SIZE }).map((_, index) => (
+                  <BodyLoadingSkeleton key={index} />
+                ))}
+              </>
+            ) : (
+              <tr>
+                <td colSpan={4} className="bg-gray-50 py-2 px-6 text-center text-gray-500">
+                  Data Not Found!
+                </td>
+              </tr>
+            )}
 
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
+            {isValidating && events.length > 0 && (
+              <>
+                {Array.from({ length: PAGE_SIZE }).map((_, index) => (
+                  <BodyLoadingSkeleton key={index} />
+                ))}
+              </>
+            )}
+          </tbody>
+        </table>
+        <div className="flex justify-center">
+          <button
+            onClick={loadMore}
+            className="my-2 px-4 py-2 text-[#616161] rounded-lg font-semibold text-sm"
+            disabled={isReachingEnd}
+          >
+            {isValidating ? "Loading..." : "LOAD MORE"}
+          </button>
+        </div>
       </div>
     </main>
   );
