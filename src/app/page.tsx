@@ -70,7 +70,9 @@ export default function Home() {
         <div className="flex justify-center">
           <button
             onClick={loadMore}
-            className="my-2 px-4 py-2 text-[#616161] rounded-lg font-semibold text-sm"
+            className={
+              "my-2 px-4 py-2 text-[#616161] rounded-lg font-semibold text-sm disabled:cursor-not-allowed disabled:text-gray-400"
+            }
             disabled={isReachingEnd}
           >
             {isValidating ? "Loading..." : "LOAD MORE"}
