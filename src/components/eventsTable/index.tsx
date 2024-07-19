@@ -3,6 +3,7 @@ import BodyLoadingSkeleton from "./bodyLoadingSkeleton";
 import { Event } from "@/types/event.type";
 import Image from "next/image";
 import ArrowRight from "@/../public/arrow-right.png";
+import ExpandedRow from "./expandedRow";
 
 type EventsTableProps = {
   pageSize: number;
@@ -66,51 +67,7 @@ const EventsTable: FC<EventsTableProps> = ({
                   <Image src={ArrowRight} alt="arrow right icon" />
                 </td>
               </tr>
-              {expandedRow === event.id && (
-                <tr key={`${event.id}-details`}>
-                  <td colSpan={4} className="border-b bg-gray-50">
-                    <div className="ms-[-3%] w-[106%] p-4 bg-gray-100 rounded-lg shadow-md">
-                      <div className="grid grid-cols-3 gap-4">
-                        <div>
-                          <h3 className="font-semibold">Actor</h3>
-                          <p>Name: {event.actorName}</p>
-                          <p>Email: {event.targetName}</p>
-                          <p>ID: {event.actorId}</p>
-                        </div>
-                        <div>
-                          <h3 className="font-semibold">Action</h3>
-                          <p>Name: {event.action.name}</p>
-                          <p>Object: {event.action.object}</p>
-                          <p>ID: {event.action.id}</p>
-                        </div>
-                        <div>
-                          <h3 className="font-semibold">Date</h3>
-                          <p>
-                            Readable:{" "}
-                            {new Date(event.occurredAt).toLocaleString()}
-                          </p>
-                        </div>
-                        <div>
-                          <h3 className="font-semibold">Metadata</h3>
-                          {event.metadata &&
-                            Object.entries(event.metadata).map(
-                              ([key, value]) => (
-                                <p key={key}>
-                                  {key}: {value}
-                                </p>
-                              )
-                            )}
-                        </div>
-                        <div>
-                          <h3 className="font-semibold">Target</h3>
-                          <p>Name: {event.targetName}</p>
-                          <p>ID: {event.targetId}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              )}
+              {expandedRow === event.id && <ExpandedRow event={event} />}
             </>
           ))
         ) : isFetchingData ? (
