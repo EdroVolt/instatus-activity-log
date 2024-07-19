@@ -27,16 +27,16 @@ const EventsTable: FC<EventsTableProps> = ({
     <table className="min-w-full">
       <thead>
         <tr>
-          <th className="text-start px-6 py-2 uppercase text-sm font-semibold text-[#616161]">
+          <th className="text-start px-6 py-4 uppercase text-sm font-semibold text-[#616161]">
             Actor
           </th>
-          <th className="text-start px-6 py-2 uppercase text-sm font-semibold text-[#616161]">
+          <th className="text-start px-6 py-4 uppercase text-sm font-semibold text-[#616161]">
             Action
           </th>
-          <th className="text-start px-6 py-2 uppercase text-sm font-semibold text-[#616161]">
+          <th className="text-start px-6 py-4 uppercase text-sm font-semibold text-[#616161]">
             Date
           </th>
-          <th className="text-start px-6 py-2 uppercase text-sm font-semibold text-[#616161]"></th>
+          <th className="text-start px-6 py-4 uppercase text-sm font-semibold text-[#616161]"></th>
         </tr>
       </thead>
       <tbody className="bg-white border-x border-[#f5f5f5]">

@@ -1,5 +1,7 @@
+import { isEmptyObject } from "@/lib/object.utilt";
 import { Event } from "@/types/event.type";
 import { FC } from "react";
+import Skeleton from "react-loading-skeleton";
 
 type ExpandedRowProps = {
   event: Event;
@@ -60,12 +62,15 @@ const ExpandedRow: FC<ExpandedRowProps> = ({ event }) => {
               <h3 className="font-medium uppercase text-[17px] text-[#929292] pb-3">
                 Metadata
               </h3>
-              {event.metadata &&
+              {event.metadata && !isEmptyObject(event.metadata) ? (
                 Object.entries(event.metadata).map(([key, value]) => (
                   <p key={key}>
                     {key}: {value}
                   </p>
-                ))}
+                ))
+              ) : (
+                <Skeleton width={188} enableAnimation={false} />
+              )}
             </div>
             <div>
               <h3 className="font-medium uppercase text-[17px] text-[#929292] pb-3">
