@@ -6,28 +6,7 @@ import { useDebounce } from "@/lib/hooks/useDebounce";
 import BodyLoadingSkeleton from "@/components/eventsTable/bodyLoadingSkeleton";
 import ArrowRight from "../../public/arrow-right.png";
 import Image from "next/image";
-
-interface Event {
-  id: string;
-  actorName: string;
-  actorId: string;
-  targetName: string;
-  targetId: string;
-  occurredAt: string;
-  action: {
-    id: string;
-    object: string;
-    name: string;
-  };
-  metadata: Record<string, string | undefined>;
-}
-
-interface EventResponse {
-  events: Event[];
-  totalCount: number;
-  page: number;
-  limit: number;
-}
+import { EventResponse } from "@/types/action.type";
 
 const PAGE_SIZE = 5;
 
