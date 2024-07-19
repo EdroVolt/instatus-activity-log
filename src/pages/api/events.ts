@@ -7,7 +7,10 @@ interface EventRequestBody {
   actorId: string;
   actorName: string;
   group: string;
-  actionId: string;
+  action: {
+    object: string;
+    name: string;
+  };
   targetId: string;
   targetName: string;
   location: string;
@@ -25,7 +28,7 @@ export default async function eventsHandler(
       actorId,
       actorName,
       group,
-      actionId,
+      action,
       targetId,
       targetName,
       location,
@@ -34,23 +37,27 @@ export default async function eventsHandler(
     }: EventRequestBody = req.body;
 
     try {
+      const newAction = await prisma.action.create({ data: action });
+
       const newEvent = await prisma.event.create({
         data: {
           object,
           actorId,
           actorName,
           group,
-          actionId,
+          actionId: newAction.id,
           targetId,
           targetName,
           location,
-          occurredAt: new Date(occurredAt),
+          occurredAt: occurredAt ? new Date(occurredAt) : undefined,
           metadata,
         },
       });
       res.status(201).json(newEvent);
     } catch (error) {
-      res.status(500).json({ error: "Error creating event" });
+      console.log(error);
+
+      res.status(500).json(error);
     }
   } else if (req.method === "GET") {
     const {
