@@ -4,6 +4,7 @@ import { Event } from "@/types/event.type";
 import Image from "next/image";
 import ArrowRight from "@/../public/arrow-right.png";
 import ExpandedRow from "./expandedRow";
+import { generateGradient } from "@/lib/generateGradient";
 
 type EventsTableProps = {
   pageSize: number;
@@ -48,7 +49,10 @@ const EventsTable: FC<EventsTableProps> = ({
                 onClick={() => toggleExpandRow(event.id)}
               >
                 <td className="py-2 px-6 flex items-center first:py-6">
-                  <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xl font-semibold text-white mr-2">
+                  <div
+                    className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xl font-semibold text-white mr-2"
+                    style={{ background: generateGradient(event.actorName) }}
+                  >
                     {event.actorName.charAt(0).toUpperCase()}
                   </div>
                   <span>{event.targetName}</span>
